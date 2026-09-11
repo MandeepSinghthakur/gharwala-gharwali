@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="pa">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ਆਪਣੇ ਸਾਥੀ ਲਈ ਸਵਾਲ ਬਣਾਓ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Paaji+2:wght@500;700;800&family=Noto+Serif+Gurmukhi:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --khaddar: #5B1127;       /* hand-spun cloth, madder-dyed */
+    --khaddar-deep: #3D0A19;
+    --pat: #E9B53A;           /* golden silk floss */
+    --marigold: #F28C28;
+    --rani: #D6246E;
+    --thread: #FBEBD3;        /* undyed thread, used for text */
+    --thread-soft: rgba(251, 235, 211, .74);
+    --thread-faint: rgba(251, 235, 211, .45);
+    --display: "Baloo Paaji 2", "Mukta Mahee", "Gurmukhi Sangam MN", "Raavi", system-ui, sans-serif;
+    --body: "Noto Serif Gurmukhi", "Gurmukhi MN", "Raavi", "Noto Sans Gurmukhi", serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html { font-size: 18px; }
+  body {
+    min-height: 100dvh;
+    background-color: var(--khaddar);
+    /* faint weave, like khaddar under the embroidery */
+    background-image:
+      repeating-linear-gradient(0deg, rgba(0,0,0,.08) 0 1px, transparent 1px 3px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, transparent 1px 4px);
+    color: var(--thread);
+    font-family: var(--body);
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  :focus-visible { outline: 3px solid var(--thread); outline-offset: 3px; }
+
+  /* ---------- Phulkari progress band ---------- */
+  .band {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--khaddar-deep);
+    padding: .65rem 1rem .55rem;
+    border-bottom: 2px dashed rgba(233,181,58,.35);
+  }
+  .band ol { list-style: none; padding: 0; margin: 0 auto; max-width: 36rem; display: flex; justify-content: center; gap: .2rem; }
+  .band li { flex: 1 1 0; max-width: 2.3rem; aspect-ratio: 1; }
+  .buta { width: 100%; height: 100%; display: block; overflow: visible; color: var(--khaddar-deep); }
+  .buta .trace { fill: none; stroke: var(--thread-faint); stroke-width: 1.2; stroke-dasharray: 2 2.4; }
+  .buta.now .trace { stroke: var(--pat); stroke-dasharray: none; stroke-width: 1.8; }
+  .buta .q {
+    stroke: currentColor; stroke-width: 1.4;
+    transform-box: fill-box; transform-origin: center;
+    transform: scale(0);
+    transition: transform .45s cubic-bezier(.3, 1.45, .5, 1);
+  }
+  .buta.done .q { transform: scale(1); }
+
+  /* ---------- Layout ---------- */
+  main { max-width: 34rem; margin: 0 auto; padding: 2.2rem 1.25rem 2.5rem; min-height: calc(100dvh - 3.6rem); display: flex; }
+  .screen { flex: 1; display: flex; flex-direction: column; }
+  .screen.enter { animation: appear .3s ease both; }
+  @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
+
+  h1, h2 { font-family: var(--display); font-weight: 800; color: var(--pat); line-height: 1.25; }
+  h1 { font-size: clamp(2.3rem, 9vw, 3.1rem); margin-bottom: 1rem; }
+  h2 { font-size: clamp(1.9rem, 7vw, 2.5rem); margin-bottom: .6rem; }
+  .letter p, .chapter p, .done-screen p { font-size: 1.1rem; margin-bottom: 1rem; max-width: 30em; }
+  .sign { font-family: var(--display); font-weight: 700; font-size: 1.35rem; color: var(--pat); text-align: right; margin-top: .4rem; }
+  .muted { color: var(--thread-soft); }
+
+  .q-text { font-family: var(--display); font-weight: 700; font-size: clamp(1.45rem, 5.6vw, 1.85rem); line-height: 1.45; }
+  .hint { color: var(--thread-soft); font-size: .98rem; margin-top: .35rem; }
+
+  /* ---------- Photos / motif ---------- */
+  .frame {
+    margin: .5rem .35rem 1.8rem; padding: .55rem;
+    background: var(--khaddar-deep);
+    border: 2px solid var(--pat);
+    outline: 2px dashed rgba(233,181,58,.55); outline-offset: 5px;
+  }
+  .frame img { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+  .frame.cover { max-width: 19rem; }
+  .frame figcaption { font-size: .95rem; color: var(--thread-soft); padding-top: .45rem; line-height: 1.5; }
+  .bagh { display: grid; grid-template-columns: repeat(3, 1fr); gap: .15rem; width: 9.5rem; margin: 0 0 1.8rem; }
+  .bagh .buta { color: var(--khaddar); }
+
+  /* ---------- Answers ---------- */
+  .opts { display: flex; flex-direction: column; gap: .6rem; margin-top: 1.4rem; }
+  .opt {
+    appearance: none; font: inherit; font-size: 1.08rem; line-height: 1.5; text-align: left;
+    color: var(--thread); background: rgba(61,10,25,.55);
+    border: 1.5px solid rgba(233,181,58,.45); border-radius: .9rem;
+    padding: .8rem 1rem; cursor: pointer;
+    display: flex; align-items: center; gap: .8rem;
+    transition: background-color .15s, color .15s, border-color .15s;
+  }
+  .opt::before {
+    content: ""; flex: none; width: .8rem; height: .8rem; margin-left: .15rem;
+    border: 1.5px dashed rgba(233,181,58,.75); transform: rotate(45deg);
+  }
+  .opt:hover { border-color: var(--pat); }
+  .opt[aria-pressed="true"] { background: var(--pat); color: var(--khaddar); border-color: var(--pat); }
+  .opt[aria-pressed="true"]::before { background: var(--khaddar); border-color: var(--khaddar); border-style: solid; }
+
+  .pairs { display: flex; flex-direction: column; gap: .75rem; margin-top: 1.4rem; }
+  .pair { display: grid; grid-template-columns: 1fr auto 1fr; gap: .45rem; align-items: stretch; }
+  .pair .opt { justify-content: center; text-align: center; padding: .75rem .5rem; }
+  .pair .opt::before { display: none; }
+  .pair .or { align-self: center; font-family: var(--display); color: var(--thread-soft); font-size: .92rem; }
+
+  .field {
+    width: 100%; margin-top: 1.4rem; font: inherit; font-size: 1.1rem; line-height: 1.7;
+    color: var(--thread); background: rgba(61,10,25,.6);
+    border: 1.5px dashed rgba(233,181,58,.55); border-radius: .9rem; padding: .85rem 1rem;
+  }
+  textarea.field { min-height: 9.5rem; resize: vertical; }
+  .field:focus { outline: none; border-style: solid; border-color: var(--pat); }
+  .field::placeholder { color: var(--thread-faint); }
+  .other-field { margin-top: .2rem; }
+
+  .scale { margin-top: 2rem; }
+  .scale-face { display: flex; align-items: center; gap: 1rem; margin-bottom: .8rem; }
+  .scale-face .emo { font-size: 3.6rem; line-height: 1; }
+  .scale-face b { font-family: var(--display); font-size: 2.6rem; color: var(--pat); line-height: 1; }
+  .scale input { width: 100%; accent-color: var(--rani); height: 2.2rem; cursor: pointer; }
+  .scale-ends { display: flex; justify-content: space-between; color: var(--thread-soft); font-size: .95rem; }
+
+  /* ---------- Buttons ---------- */
+  .nav { margin-top: auto; padding-top: 2.2rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .btn {
+    font-family: var(--display); font-weight: 700; font-size: 1.15rem; line-height: 1.4;
+    border: none; border-radius: 999px; padding: .75rem 1.9rem; cursor: pointer;
+    background: var(--thread); color: var(--khaddar); text-decoration: none; text-align: center;
+  }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
+  .btn.ghost { background: transparent; color: var(--thread); border: 1.5px solid var(--thread-soft); }
+  .link {
+    background: none; border: none; cursor: pointer; padding: .5rem .2rem;
+    font-family: var(--display); font-size: 1.05rem; color: var(--thread-soft);
+  }
+  .link:hover { color: var(--thread); }
+
+  /* ---------- Review ---------- */
+  .review { list-style: none; padding: 0; margin-top: 1rem; }
+  .review li { padding: .9rem 0; border-bottom: 1px dashed rgba(233,181,58,.35); }
+  .review .rq { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+  .review .rq span { font-family: var(--display); font-size: .98rem; line-height: 1.5; color: var(--thread-soft); }
+  .review .rq .link { font-size: .95rem; color: var(--pat); flex: none; padding: 0; }
+  .review .ra { font-size: 1.08rem; margin-top: .2rem; white-space: pre-wrap; }
+  .review .ra.empty { color: var(--thread-faint); }
+  .send-row { display: flex; flex-direction: column; gap: .8rem; margin-top: 1.8rem; }
+  .status { font-size: 1rem; color: var(--marigold); line-height: 1.6; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .screen.enter { animation: none; }
+    .buta .q, .opt { transition: none; }
+  }
+
+  /* ---------- Setup (creator) ---------- */
+  .setup h1 { font-size: clamp(1.9rem, 7.5vw, 2.5rem); }
+  .lbl { display: block; font-family: var(--display); font-weight: 700; font-size: 1.05rem; line-height: 1.5; margin-top: 1.6rem; }
+  .lbl small { font-weight: 500; font-size: .9rem; color: var(--thread-soft); }
+  .setup .field { margin-top: .45rem; }
+  .setup textarea.field { min-height: 6.5rem; }
+  .help { font-size: .92rem; line-height: 1.55; color: var(--thread-soft); margin-top: .4rem; }
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: .45rem; }
+  .seg .opt { justify-content: center; }
+  .seg .opt::before { display: none; }
+  .linkbox { font-family: system-ui, sans-serif; font-size: .85rem; line-height: 1.5; margin-top: 1rem; }
+  .steps { list-style: none; padding: 0; margin-top: 1.6rem; counter-reset: s; }
+  .steps li { position: relative; padding-left: 2.6rem; margin-bottom: 1.7rem; counter-increment: s; }
+  .steps li::before {
+    content: counter(s); position: absolute; left: 0; top: .15rem;
+    width: 1.75rem; height: 1.75rem; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--pat); color: var(--khaddar);
+    font-family: var(--display); font-weight: 800; font-size: .95rem; line-height: 1;
+  }
+  .steps h3 { font-family: var(--display); font-size: 1.15rem; color: var(--pat); line-height: 1.45; }
+  .steps p { font-size: 1rem; margin-top: .2rem; }
+  .btn-row { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .8rem; }
+  .btn.small { font-size: 1rem; padding: .55rem 1.35rem; }
+  .madeby { margin-top: auto; padding-top: 2.5rem; font-size: .98rem; }
+  .madeby a { color: var(--pat); }
+</style>
+</head>
+<body>
+
+<!-- Satin-stitch fills. Adjacent sections run in different directions, like real phulkari darn stitch. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs id="threads"></defs></svg>
+
+<div class="band" id="band" role="progressbar" aria-label="ਜਵਾਬ" aria-valuemin="0" hidden></div>
+<main id="app"></main>
+
+<script>
+/* =====================================================================
+   How it works
+   - Open the page with no link settings  -> setup form for the creator.
+   - The form builds a link: <page>#s=<settings>. Settings (names, email,
+     who-to-whom, optional message/photo) live in the URL hash, so nothing
+     personal is stored in the repo and anyone can make their own link.
+   - Opening that link shows the Punjabi Q&A; answers are emailed to the
+     creator through FormSubmit (each email address activates once).
+   To change the questions, edit buildChapters() below.
+   ===================================================================== */
+
+const EMAIL_RE = /^[^\s@/?#]+@[^\s@/?#]+\.[^\s@/?#]+$/;
+const OTHER_LABEL = "ਹੋਰ ਕੁਝ… ✍️";
+const SCALE_FACES = ["😬", "😕", "😐", "🙂", "😊", "😄", "😁", "😍", "🥰", "👑"];
+const THREADS = { gold: ["#E9B53A", "#C4891B"], marigold: ["#F28C28", "#C7631A"], rani: ["#D6246E", "#A2144D"] };
+
+const app = document.getElementById("app");
+const band = document.getElementById("band");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* ---------- Link settings (URL hash) ---------- */
+function encodeSettings(obj) {
+  const bytes = new TextEncoder().encode(JSON.stringify(obj));
+  let bin = "";
+  bytes.forEach(b => { bin += String.fromCharCode(b); });
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function decodeSettings(str) {
+  const bin = atob(str.replace(/-/g, "+").replace(/_/g, "/"));
+  return JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0))));
+}
+function readLink() {
+  const m = location.hash.match(/[#&]s=([^&]+)/);
+  if (!m) return null;
+  try {
+    const c = decodeSettings(m[1]);
+    if (!c || !EMAIL_RE.test(c.t || "") || !c.h || !c.f) return null;
+    return {
+      to: c.t, her: c.h, from: c.f,
+      sg: c.sg === "f" ? "f" : "m",               // sender:    m = ਪਤੀ, f = ਪਤਨੀ
+      rg: c.rg === "m" ? "m" : "f",               // recipient: m = ਪਤੀ, f = ਪਤਨੀ
+      photo: /^https?:\/\//i.test(c.p || "") ? c.p : "",
+      msg: c.m || "",
+    };
+  } catch (err) {
+    console.warn("Could not read settings from the link:", err);
+    return null;
+  }
+}
+const baseUrl = () => location.href.split("#")[0];
+
+/* ---------- Questions (gender-aware Punjabi) ----------
+   R(fem, masc) -> form for the person answering
+   S(fem, masc) -> form for the person who made the link          */
+function buildChapters(c) {
+  const R = (f, m) => (c.rg === "f" ? f : m);
+  const S = (f, m) => (c.sg === "f" ? f : m);
+  return [
+    {
+      title: "ਸਾਡੀਆਂ ਯਾਦਾਂ",
+      line: "ਥੋੜ੍ਹਾ ਪਿੱਛੇ ਚੱਲੀਏ, ਜਿੱਥੋਂ ਸਭ ਸ਼ੁਰੂ ਹੋਇਆ।",
+      questions: [
+        { type: "text", text: "ਸਾਡੀ ਕਿਹੜੀ ਯਾਦ ਤੇਰੇ ਦਿਲ ਦੇ ਸਭ ਤੋਂ ਨੇੜੇ ਆ?", placeholder: "ਕਿੱਥੇ ਸੀ, ਕੀ ਹੋਇਆ ਸੀ… ਸਭ ਲਿਖ" },
+        { type: "choice", text: "ਪਹਿਲੀ ਵਾਰ ਮਿਲ ਕੇ ਤੈਨੂੰ ਮੇਰੇ ਬਾਰੇ ਕੀ ਲੱਗਿਆ ਸੀ?",
+          options: [S("ਬੜੀ ਸ਼ਰੀਫ਼ ਕੁੜੀ ਆ 😇", "ਬੜਾ ਸ਼ਰੀਫ਼ ਮੁੰਡਾ ਆ 😇"), S("ਥੋੜ੍ਹੀ ਘਬਰਾਈ ਹੋਈ 😅", "ਥੋੜ੍ਹਾ ਘਬਰਾਇਆ ਹੋਇਆ 😅"),
+                    "ਬੱਸ, ਏਹੀ ਆ ❤️", "ਸੱਚ ਦੱਸਾਂ? ਯਾਦ ਨਹੀਂ 🙈"] },
+        { type: "choice", text: "ਵਿਆਹ ਵਾਲੇ ਦਿਨ ਦੀ ਕਿਹੜੀ ਗੱਲ ਅੱਜ ਵੀ ਸਭ ਤੋਂ ਵੱਧ ਯਾਦ ਆਉਂਦੀ ਆ?",
+          options: ["ਰਸਮਾਂ ਵੇਲੇ ਦਾ ਪਲ 🙏", "ਭੰਗੜੇ-ਗਿੱਧੇ ਦੀ ਰੌਣਕ 💃", "ਡੋਲੀ ਵੇਲੇ ਦੇ ਹੰਝੂ 🥹"], other: true },
+      ],
+    },
+    {
+      title: "ਥੋੜ੍ਹਾ ਹਾਸਾ-ਠੱਠਾ",
+      line: "ਹੁਣ ਬਹੁਤਾ ਨਾ ਸੋਚੀਂ, ਜੋ ਪਹਿਲਾਂ ਮਨ 'ਚ ਆਵੇ ਓਹੀ ਚੁਣ।",
+      questions: [
+        { type: "pairs", text: "ਜਲਦੀ ਦੱਸ, ਇਹ ਜਾਂ ਉਹ?", hint: "ਹਰ ਜੋੜੀ 'ਚੋਂ ਇੱਕ ਚੁਣ",
+          pairs: [["ਚਾਹ 🫖", "ਕੌਫ਼ੀ ☕"], ["ਪਹਾੜ 🏔️", "ਸਮੁੰਦਰ 🌊"], ["ਘਰੇ ਫ਼ਿਲਮ 🎬", "ਬਾਹਰ ਡਿਨਰ 🍽️"],
+                  ["ਸਵੇਰ ਦੀ ਸੈਰ 🌅", "ਰਾਤ ਦੀ ਡਰਾਈਵ 🌙"], ["ਪੰਜਾਬੀ ਗਾਣੇ 🎶", "ਪੁਰਾਣੇ ਹਿੰਦੀ ਗਾਣੇ 📻"]] },
+        { type: "choice", text: "ਮੇਰੀ ਕਿਹੜੀ ਆਦਤ ਤੈਨੂੰ ਸਭ ਤੋਂ ਵੱਧ ਤੰਗ ਕਰਦੀ ਆ? 😬",
+          options: ["ਹਰ ਵੇਲੇ ਲੈਪਟਾਪ ਜਾਂ ਫ਼ੋਨ 💻", "ਦੇਰ ਰਾਤ ਤੱਕ ਜਾਗਣਾ 🌙", "ਗੱਲ ਸੁਣ ਕੇ ਭੁੱਲ ਜਾਣਾ 🤦"], other: true },
+        { type: "scale", text: `1 ਤੋਂ 10 ਤੱਕ, ਮੈਂ ${S("ਕਿੰਨੀ ਕੁ ਚੰਗੀ ਪਤਨੀ", "ਕਿੰਨਾ ਕੁ ਚੰਗਾ ਪਤੀ")} ਹਾਂ? ਸੱਚੋ-ਸੱਚ ਦੱਸੀਂ 😄`,
+          min: 1, max: 10, start: 7, low: "ਸੁਧਰ ਜਾਓ 😅", high: "ਸਭ ਤੋਂ ਵਧੀਆ 👑" },
+        { type: "choice", text: `ਅੱਜ ਰਾਤ ਦੀ ਰੋਟੀ ਮੈਂ ਬਣਾਵਾਂ, ਤਾਂ ਕੀ ਖਾਣਾ ${R("ਚਾਹੇਂਗੀ", "ਚਾਹੇਂਗਾ")}?`,
+          options: ["ਸਰ੍ਹੋਂ ਦਾ ਸਾਗ ਤੇ ਮੱਕੀ ਦੀ ਰੋਟੀ 🌽", "ਰਾਜਮਾਂਹ-ਚੌਲ 🍛", "ਰਹਿਣ ਦਿਓ, ਪੀਜ਼ਾ ਮੰਗਵਾ ਲਓ 🍕", "ਰਹਿਣ ਦਿਓ ਜੀ, ਮੈਂ ਈ ਬਣਾ ਲਊਂ 😂"] },
+      ],
+    },
+    {
+      title: "ਦਿਲ ਦੀਆਂ ਗੱਲਾਂ",
+      line: `ਹੁਣ ਆਰਾਮ ਨਾਲ। ਜੋ ਵੀ ${R("ਲਿਖੇਂਗੀ", "ਲਿਖੇਂਗਾ")}, ਮੈਂ ਧਿਆਨ ਨਾਲ ${S("ਪੜ੍ਹੂੰਗੀ", "ਪੜ੍ਹੂੰਗਾ")}।`,
+      questions: [
+        { type: "multi", text: "ਤੇਰਾ ਦਿਲ ਕਿਨ੍ਹਾਂ ਗੱਲਾਂ ਨਾਲ ਸਭ ਤੋਂ ਵੱਧ ਖ਼ੁਸ਼ ਹੁੰਦਾ?", hint: "ਜਿੰਨੀਆਂ ਮਰਜ਼ੀ ਚੁਣ ਲੈ",
+          options: ["ਪਿਆਰ ਭਰੇ ਦੋ ਬੋਲ 💌", "ਇਕੱਠੇ ਬਿਤਾਇਆ ਸਮਾਂ ⏳", "ਛੋਟੇ-ਛੋਟੇ ਤੋਹਫ਼ੇ 🎁", "ਘਰ ਦੇ ਕੰਮਾਂ 'ਚ ਹੱਥ ਵਟਾਉਣਾ 🧺", "ਇੱਕ ਘੁੱਟ ਕੇ ਜੱਫੀ 🤗"] },
+        { type: "text", text: `ਕੋਈ ਇੱਕ ਗੱਲ ਜੋ ਤੂੰ ${R("ਚਾਹੁੰਦੀ ਆਂ", "ਚਾਹੁੰਦਾ ਏਂ")} ਕਿ ਮੈਂ ਥੋੜ੍ਹੀ ਹੋਰ ਕਰਾਂ?`,
+          placeholder: `ਬੇਝਿਜਕ ਦੱਸ, ਗੁੱਸਾ ਨਹੀਂ ${S("ਕਰਦੀ", "ਕਰਦਾ")} 😊` },
+        { type: "text", text: "ਕੋਈ ਗੱਲ ਜੋ ਕਦੇ ਕਹਿ ਨਹੀਂ ਹੋਈ, ਪਰ ਦਿਲ 'ਚ ਰਹਿ ਗਈ?", placeholder: "ਅੱਜ ਕਹਿ ਦੇ…" },
+      ],
+    },
+    {
+      title: "ਅੱਗੇ ਦੇ ਸੁਪਨੇ",
+      line: "ਹੁਣ ਅੱਗੇ ਦੀ ਸੋਚੀਏ, ਇਕੱਠਿਆਂ।",
+      questions: [
+        { type: "choice", text: "ਅਗਲੀਆਂ ਛੁੱਟੀਆਂ 'ਚ ਕਿੱਥੇ ਚੱਲੀਏ?",
+          options: ["ਪੰਜਾਬ, ਆਪਣਿਆਂ ਕੋਲ 🌾", "ਕਿਸੇ ਸਮੁੰਦਰੀ ਕੰਢੇ 🏝️", "ਬਰਫ਼ੀਲੇ ਪਹਾੜਾਂ 'ਚ 🏔️", "ਜਿੱਥੇ ਤੁਸੀਂ ਲੈ ਚੱਲੋ ❤️"], other: true },
+        { type: "text", text: `ਪੰਜ ਸਾਲਾਂ ਬਾਅਦ ਤੂੰ ਸਾਨੂੰ ਕਿੱਥੇ ${R("ਦੇਖਦੀ ਆਂ", "ਦੇਖਦਾ ਏਂ")}?`, placeholder: "ਘਰ, ਕੰਮ, ਸੁਪਨੇ… ਜੋ ਮਨ ਆਵੇ" },
+        { type: "text", text: "ਤੇ ਆਖ਼ਰ 'ਚ, ਮੇਰੇ ਲਈ ਕੋਈ ਸੁਨੇਹਾ? 💌", placeholder: "ਜੋ ਵੀ ਦਿਲ ਕਰੇ…" },
+      ],
+    },
+  ];
+}
+const DEFAULT_INTRO = "ਅੱਜ ਮੈਂ ਤੇਰੇ ਲਈ ਕੁਝ ਸਵਾਲ ਬਣਾਏ ਨੇ। ਕੋਈ ਜਵਾਬ ਸਹੀ ਜਾਂ ਗ਼ਲਤ ਨਹੀਂ, ਬੱਸ ਦਿਲੋਂ ਲਿਖੀਂ।";
+
+/* ---------- Embroidery ---------- */
+document.getElementById("threads").innerHTML = Object.entries(THREADS).map(([k, [base, line]]) => `
+  <pattern id="h-${k}" width="2.4" height="2.4" patternUnits="userSpaceOnUse"><rect width="2.4" height="2.4" fill="${base}"/><rect y="1.6" width="2.4" height=".8" fill="${line}"/></pattern>
+  <pattern id="v-${k}" width="2.4" height="2.4" patternUnits="userSpaceOnUse"><rect width="2.4" height="2.4" fill="${base}"/><rect x="1.6" width=".8" height="2.4" fill="${line}"/></pattern>`).join("");
+
+function butaSVG(thread, cls = "") {
+  return `<svg class="buta ${cls}" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+    <path class="trace" d="M20 2 38 20 20 38 2 20Z"/>
+    <path class="q" fill="url(#h-${thread})" d="M20 2 29 11 20 20 11 11Z"/>
+    <path class="q" style="transition-delay:.07s" fill="url(#v-${thread})" d="M29 11 38 20 29 29 20 20Z"/>
+    <path class="q" style="transition-delay:.14s" fill="url(#h-${thread})" d="M20 20 29 29 20 38 11 29Z"/>
+    <path class="q" style="transition-delay:.21s" fill="url(#v-${thread})" d="M11 11 20 20 11 29 2 20Z"/>
+  </svg>`;
+}
+function bagh() {
+  const t = ["marigold", "gold", "marigold", "gold", "rani", "gold", "marigold", "gold", "marigold"];
+  return `<div class="bagh" aria-hidden="true">${t.map(c => butaSVG(c, "done")).join("")}</div>`;
+}
+function picture(src, extraClass = "") {
+  if (!src) return bagh();
+  return `<figure class="frame ${extraClass}"><img src="${esc(src)}" alt="" onerror="this.closest('figure').outerHTML = '';"></figure>`;
+}
+const threadFor = i => (i % 4 === 3 ? "rani" : i % 2 ? "marigold" : "gold");
+
+/* =====================================================================
+   SETUP MODE — for whoever is making a link
+   ===================================================================== */
+const setup = { from: "", her: "", to: "", sg: "m", rg: "f", msg: "", photo: "", link: "", error: "", copied: false, view: "form" };
+
+function setupFormScreen() {
+  const seg = (key, val, label) =>
+    `<button class="opt" data-act="${key}" data-v="${val}" aria-pressed="${setup[key] === val}">${label}</button>`;
+  return `<section class="screen setup">
+    ${bagh()}
+    <h1>ਆਪਣੇ ਜੀਵਨ ਸਾਥੀ ਲਈ ਸਵਾਲ ਬਣਾਓ</h1>
+    <p class="muted">ਨਾਮ ਤੇ ਆਪਣੀ ਈਮੇਲ ਭਰੋ। ਤੁਹਾਨੂੰ ਇੱਕ ਲਿੰਕ ਮਿਲੂ ਜੋ ਤੁਸੀਂ ਆਪਣੇ ਸਾਥੀ ਨੂੰ ਭੇਜ ਸਕਦੇ ਹੋ। ਉਹਨਾਂ ਦੇ ਜਵਾਬ ਸਿੱਧੇ ਤੁਹਾਡੀ ਈਮੇਲ ਤੇ ਆਉਣਗੇ।</p>
+
+    <label class="lbl" for="f-from">ਤੁਹਾਡਾ ਨਾਮ</label>
+    <input class="field" id="f-from" data-f="from" value="${esc(setup.from)}" placeholder="ਜਿਵੇਂ ਹਰਪ੍ਰੀਤ" autocomplete="given-name">
+    <span class="lbl" id="l-sg">ਤੁਸੀਂ</span>
+    <div class="seg" role="group" aria-labelledby="l-sg">${seg("sg", "m", "ਪਤੀ")}${seg("sg", "f", "ਪਤਨੀ")}</div>
+
+    <label class="lbl" for="f-her">ਆਪਣੇ ਸਾਥੀ ਨੂੰ ਕੀ ਕਹਿ ਕੇ ਬੁਲਾਉਂਦੇ ਹੋ?</label>
+    <input class="field" id="f-her" data-f="her" value="${esc(setup.her)}" placeholder="ਜਿਵੇਂ ਮੇਰੀ ਜਾਨ, ਜਾਂ ਉਹਨਾਂ ਦਾ ਨਾਮ">
+    <p class="help">ਇਹ ਪਹਿਲੇ ਪੰਨੇ ਤੇ ਸਭ ਤੋਂ ਉੱਤੇ ਲਿਖਿਆ ਆਊ।</p>
+    <span class="lbl" id="l-rg">ਤੁਹਾਡਾ ਸਾਥੀ</span>
+    <div class="seg" role="group" aria-labelledby="l-rg">${seg("rg", "m", "ਪਤੀ")}${seg("rg", "f", "ਪਤਨੀ")}</div>
+
+    <label class="lbl" for="f-to">ਜਵਾਬ ਕਿਹੜੀ ਈਮੇਲ ਤੇ ਆਉਣ?</label>
+    <input class="field" id="f-to" data-f="to" value="${esc(setup.to)}" type="email" inputmode="email" autocomplete="email" dir="ltr" placeholder="you@gmail.com">
+    <p class="help">ਇਹ ਈਮੇਲ ਲਿੰਕ ਦੇ ਅੰਦਰ ਰਹਿੰਦੀ ਹੈ, ਇਸ ਲਈ ਲਿੰਕ ਸਿਰਫ਼ ਆਪਣੇ ਸਾਥੀ ਨੂੰ ਹੀ ਭੇਜੋ।</p>
+
+    <label class="lbl" for="f-msg">ਪਹਿਲੇ ਪੰਨੇ ਲਈ ਆਪਣੇ ਸ਼ਬਦ <small>(ਮਰਜ਼ੀ ਨਾਲ)</small></label>
+    <textarea class="field" id="f-msg" data-f="msg" placeholder="${esc(DEFAULT_INTRO)}">${esc(setup.msg)}</textarea>
+
+    <label class="lbl" for="f-photo">ਫ਼ੋਟੋ ਦਾ ਲਿੰਕ <small>(ਮਰਜ਼ੀ ਨਾਲ)</small></label>
+    <input class="field" id="f-photo" data-f="photo" value="${esc(setup.photo)}" type="url" dir="ltr" placeholder="https://…/photo.jpg">
+    <p class="help">ਸਿੱਧਾ ਤਸਵੀਰ ਵਾਲਾ ਲਿੰਕ ਹੋਵੇ। ਖ਼ਾਲੀ ਛੱਡੋ ਤਾਂ ਫੁਲਕਾਰੀ ਦਿਸੂ।</p>
+
+    ${setup.error ? `<p class="status" role="alert" style="margin-top:1.4rem">${setup.error}</p>` : ""}
+    <div class="nav"><span></span><button class="btn" data-act="make">ਲਿੰਕ ਬਣਾਓ</button></div>
+  </section>`;
+}
+
+function setupDoneScreen() {
+  const wa = "https://wa.me/?text=" + encodeURIComponent("ਤੇਰੇ ਲਈ ਕੁਝ ਬਣਾਇਆ ❤️ ਖੋਲ੍ਹ ਕੇ ਦੇਖ: " + setup.link);
+  return `<section class="screen setup">
+    <h2>ਲਿੰਕ ਤਿਆਰ ਹੈ ❤️</h2>
+    <input class="field linkbox" id="linkbox" readonly dir="ltr" aria-label="ਲਿੰਕ" value="${esc(setup.link)}">
+    <ol class="steps">
+      <li>
+        <h3>ਪਹਿਲਾਂ ਆਪ ਅਜ਼ਮਾਓ</h3>
+        <p>ਲਿੰਕ ਖੋਲ੍ਹ ਕੇ ਇੱਕ ਵਾਰ ਆਪ ਜਵਾਬ ਭੇਜੋ। ${esc(setup.to)} ਤੇ FormSubmit ਵੱਲੋਂ ਈਮੇਲ ਆਊ, ਉਸ ਵਿੱਚ “Activate Form” ਦੱਬੋ। ਈਮੇਲ ਨਾ ਦਿਸੇ ਤਾਂ ਸਪੈਮ ਵਿੱਚ ਦੇਖੋ।</p>
+        <div class="btn-row"><a class="btn small" href="${esc(setup.link)}" target="_blank" rel="noopener">ਆਪ ਅਜ਼ਮਾਓ</a></div>
+      </li>
+      <li>
+        <h3>ਇੱਕ ਵਾਰ ਹੋਰ ਭੇਜ ਕੇ ਦੇਖੋ</h3>
+        <p>Activate ਕਰਨ ਤੋਂ ਬਾਅਦ ਦੁਬਾਰਾ ਜਵਾਬ ਭੇਜੋ। ਜਵਾਬਾਂ ਵਾਲੀ ਈਮੇਲ ਆ ਜਾਵੇ ਤਾਂ ਸਭ ਠੀਕ ਹੈ।</p>
+      </li>
+      <li>
+        <h3>ਹੁਣ ਆਪਣੇ ਸਾਥੀ ਨੂੰ ਭੇਜੋ</h3>
+        <div class="btn-row">
+          <button class="btn small" data-act="copy">${setup.copied ? "ਲਿੰਕ ਕਾਪੀ ਹੋ ਗਿਆ" : "ਲਿੰਕ ਕਾਪੀ ਕਰੋ"}</button>
+          <a class="btn small ghost" href="${wa}" target="_blank" rel="noopener">WhatsApp ਤੇ ਭੇਜੋ</a>
+        </div>
+      </li>
+    </ol>
+    <div class="nav"><button class="link" data-act="edit-setup">ਨਾਮ ਜਾਂ ਈਮੇਲ ਬਦਲੋ</button><span></span></div>
+  </section>`;
+}
+
+function renderSetup(focusSel) {
+  app.innerHTML = setup.view === "done" ? setupDoneScreen() : setupFormScreen();
+  if (focusSel) { const el = app.querySelector(focusSel); if (el) el.focus(); }
+}
+
+function makeLink() {
+  const from = setup.from.trim(), her = setup.her.trim(), to = setup.to.trim(), photo = setup.photo.trim();
+  let error = "", focus = "";
+  if (!from || !her) { error = "ਆਪਣਾ ਨਾਮ ਤੇ ਸਾਥੀ ਦਾ ਨਾਮ, ਦੋਵੇਂ ਭਰੋ।"; focus = !from ? "#f-from" : "#f-her"; }
+  else if (!EMAIL_RE.test(to)) { error = "ਈਮੇਲ ਠੀਕ ਨਹੀਂ ਲੱਗਦੀ। ਇਸ ਤਰ੍ਹਾਂ ਲਿਖੋ: you@gmail.com"; focus = "#f-to"; }
+  else if (photo && !/^https?:\/\//i.test(photo)) { error = "ਫ਼ੋਟੋ ਦਾ ਲਿੰਕ https:// ਨਾਲ ਸ਼ੁਰੂ ਹੋਣਾ ਚਾਹੀਦਾ, ਜਾਂ ਖ਼ਾਲੀ ਛੱਡੋ।"; focus = "#f-photo"; }
+  setup.error = error;
+  if (error) return renderSetup(focus);
+
+  const settings = { t: to, h: her, f: from, sg: setup.sg, rg: setup.rg };
+  if (setup.msg.trim()) settings.m = setup.msg.trim();
+  if (photo) settings.p = photo;
+  setup.link = `${baseUrl()}#s=${encodeSettings(settings)}`;
+  setup.copied = false;
+  setup.view = "done";
+  renderSetup();
+  window.scrollTo({ top: 0 });
+}
+
+async function copyLink() {
+  try {
+    await navigator.clipboard.writeText(setup.link);
+  } catch {
+    const box = document.getElementById("linkbox");
+    box.select();
+    document.execCommand("copy");
+  }
+  setup.copied = true;
+  renderSetup('[data-act="copy"]');
+}
+
+function startSetup() {
+  document.title = "ਆਪਣੇ ਸਾਥੀ ਲਈ ਸਵਾਲ ਬਣਾਓ";
+  band.hidden = true;
+  renderSetup();
+}
+
+/* =====================================================================
+   QUIZ MODE — for the person answering
+   ===================================================================== */
+let cfg, CHAPTERS, questions = [], flow = [], bandButas = [];
+const answers = {};
+let step = 0, returnToReview = false, sendState = "idle";
+
+const optionsOf = q => (q.other ? [...q.options, OTHER_LABEL] : q.options);
+const sign = () => `${cfg.sg === "f" ? "ਤੇਰੀ" : "ਤੇਰਾ"}, ${esc(cfg.from)}`;
+
+function isAnswered(q) {
+  const a = answers[q.id];
+  switch (q.type) {
+    case "text": return !!(a && a.trim());
+    case "choice": return !!a && (a.index !== q.options.length || !!(a.other || "").trim());
+    case "multi": return Array.isArray(a) && a.length > 0;
+    case "pairs": return Array.isArray(a) && q.pairs.every((_, i) => a[i] === 0 || a[i] === 1);
+    case "scale": return typeof a === "number";
+  }
+  return false;
+}
+const canGoOn = q => q.type === "text" || q.type === "scale" || isAnswered(q);
+
+function formatAnswer(q) {
+  const a = answers[q.id];
+  if (!isAnswered(q)) return "ਖ਼ਾਲੀ ਛੱਡਿਆ";
+  switch (q.type) {
+    case "text": return a.trim();
+    case "choice": return a.index === q.options.length ? "ਹੋਰ: " + a.other.trim() : q.options[a.index];
+    case "multi": return a.map(i => q.options[i]).join(", ");
+    case "pairs": return q.pairs.map((p, i) => p[a[i]]).join(", ");
+    case "scale": return `${a}/10 ${SCALE_FACES[a - 1]}`;
+  }
+}
+
+function updateBand() {
+  const cur = flow[step].kind === "q" ? flow[step].qi : -1;
+  let n = 0;
+  questions.forEach((q, i) => {
+    const d = isAnswered(q);
+    if (d) n++;
+    bandButas[i].classList.toggle("done", d);
+    bandButas[i].classList.toggle("now", i === cur);
+  });
+  band.setAttribute("aria-valuenow", n);
+  band.setAttribute("aria-valuetext", `${questions.length} ਵਿੱਚੋਂ ${n} ਜਵਾਬ`);
+}
+
+function introScreen() {
+  const intro = cfg.msg
+    ? cfg.msg.split(/\n+/).map(p => `<p>${esc(p)}</p>`).join("")
+    : `<p>${DEFAULT_INTRO}</p>`;
+  return `<section class="screen letter">
+    ${picture(cfg.photo, "cover")}
+    <h1>${esc(cfg.her)},</h1>
+    ${intro}
+    <p>ਹਰ ਜਵਾਬ ਨਾਲ ਉੱਤੇ ਵਾਲੀ ਫੁਲਕਾਰੀ ਦਾ ਇੱਕ ਬੂਟਾ ਕੱਢਿਆ ਜਾਊ। ${questions.length} ਸਵਾਲ ਨੇ, ਪੰਜ-ਸੱਤ ਮਿੰਟ ਲੱਗਣਗੇ।</p>
+    <p class="sign">${sign()}</p>
+    <div class="nav"><span></span><button class="btn" data-act="next">ਸ਼ੁਰੂ ਕਰੀਏ</button></div>
+  </section>`;
+}
+
+function chapterScreen(c) {
+  return `<section class="screen chapter">
+    ${bagh()}
+    <h2>${esc(c.title)}</h2>
+    <p class="muted">${esc(c.line)}</p>
+    <div class="nav"><button class="link" data-act="back">ਪਿੱਛੇ</button><button class="btn" data-act="next">ਅੱਗੇ</button></div>
+  </section>`;
+}
+
+function questionScreen(q) {
+  const a = answers[q.id];
+  let body = "";
+  if (q.type === "text") {
+    body = `<textarea class="field" id="field" aria-labelledby="qtext" placeholder="${esc(q.placeholder || "ਏਥੇ ਲਿਖ…")}">${esc(a || "")}</textarea>`;
+  }
+  if (q.type === "choice") {
+    const opts = optionsOf(q).map((label, i) =>
+      `<button class="opt" data-act="pick" data-i="${i}" aria-pressed="${!!a && a.index === i}">${esc(label)}</button>`).join("");
+    const showOther = q.other && a && a.index === q.options.length;
+    body = `<div class="opts" role="group" aria-labelledby="qtext">${opts}
+      ${showOther ? `<input class="field other-field" id="other" aria-label="${OTHER_LABEL}" placeholder="ਆਪ ਲਿਖ ਦੇ…" value="${esc(a.other || "")}">` : ""}
+    </div>`;
+  }
+  if (q.type === "multi") {
+    const sel = a || [];
+    body = `<div class="opts" role="group" aria-labelledby="qtext">${q.options.map((label, i) =>
+      `<button class="opt" data-act="toggle" data-i="${i}" aria-pressed="${sel.includes(i)}">${esc(label)}</button>`).join("")}</div>`;
+  }
+  if (q.type === "pairs") {
+    const sel = a || [];
+    body = `<div class="pairs">${q.pairs.map((p, pi) => `
+      <div class="pair" role="group" aria-label="${esc(p[0])} ਜਾਂ ${esc(p[1])}">
+        <button class="opt" data-act="pair" data-p="${pi}" data-i="0" aria-pressed="${sel[pi] === 0}">${esc(p[0])}</button>
+        <span class="or" aria-hidden="true">ਜਾਂ</span>
+        <button class="opt" data-act="pair" data-p="${pi}" data-i="1" aria-pressed="${sel[pi] === 1}">${esc(p[1])}</button>
+      </div>`).join("")}</div>`;
+  }
+  if (q.type === "scale") {
+    const v = typeof a === "number" ? a : q.start;
+    body = `<div class="scale">
+      <div class="scale-face" aria-hidden="true"><span class="emo" id="emo">${SCALE_FACES[v - 1]}</span><b id="num">${v}</b></div>
+      <input type="range" id="range" min="${q.min}" max="${q.max}" step="1" value="${v}" aria-labelledby="qtext">
+      <div class="scale-ends"><span>${esc(q.low)}</span><span>${esc(q.high)}</span></div>
+    </div>`;
+  }
+  return `<section class="screen">
+    <p class="q-text" id="qtext">${esc(q.text)}</p>
+    ${q.hint ? `<p class="hint">${esc(q.hint)}</p>` : ""}
+    ${body}
+    <div class="nav">
+      <button class="link" data-act="back">ਪਿੱਛੇ</button>
+      <button class="btn" data-act="next" id="nextBtn" ${canGoOn(q) ? "" : "disabled"}>${returnToReview ? "ਜਵਾਬਾਂ ਵੱਲ ਵਾਪਸ" : "ਅੱਗੇ"}</button>
+    </div>
+  </section>`;
+}
+
+function reviewScreen() {
+  const items = questions.map(q => `<li>
+      <div class="rq"><span>${esc(q.text)}</span><button class="link" data-act="edit" data-q="${q.qi}">ਬਦਲੋ</button></div>
+      <p class="ra ${isAnswered(q) ? "" : "empty"}">${esc(formatAnswer(q))}</p>
+    </li>`).join("");
+  const sending = sendState === "sending", failed = sendState === "error";
+  return `<section class="screen">
+    <h2>ਤੇਰੇ ਜਵਾਬ</h2>
+    <p class="muted">ਇੱਕ ਵਾਰ ਪੜ੍ਹ ਲੈ। ਕੁਝ ਬਦਲਣਾ ਹੋਵੇ ਤਾਂ “ਬਦਲੋ” ਦੱਬ ਦੇ, ਨਹੀਂ ਤਾਂ ਮੈਨੂੰ ਭੇਜ ਦੇ।</p>
+    <ul class="review">${items}</ul>
+    <div class="send-row">
+      ${failed ? `<p class="status" role="alert">ਜਵਾਬ ਨਹੀਂ ਜਾ ਸਕੇ। ਇੰਟਰਨੈੱਟ ਚੈੱਕ ਕਰਕੇ ਦੁਬਾਰਾ ਭੇਜੋ, ਜਾਂ ਹੇਠਾਂ ਵਾਲੇ ਬਟਨ ਨਾਲ ਈਮੇਲ ਐਪ ਰਾਹੀਂ ਭੇਜੋ।</p>` : ""}
+      <button class="btn" data-act="send" ${sending ? "disabled" : ""}>${sending ? "ਭੇਜ ਰਹੇ ਹਾਂ…" : failed ? "ਦੁਬਾਰਾ ਭੇਜੋ" : "ਜਵਾਬ ਭੇਜੋ"}</button>
+      ${failed ? `<a class="btn ghost" href="${mailtoHref()}">ਈਮੇਲ ਐਪ ਰਾਹੀਂ ਭੇਜੋ</a>` : ""}
+    </div>
+    <div class="nav"><button class="link" data-act="back">ਪਿੱਛੇ</button><span></span></div>
+  </section>`;
+}
+
+function sentScreen() {
+  return `<section class="screen done-screen">
+    ${picture(cfg.photo, "cover")}
+    <h2>ਜਵਾਬ ਭੇਜੇ ਗਏ ❤️</h2>
+    <p>ਸ਼ੁਕਰੀਆ, ${esc(cfg.her)}। ਤੇਰੇ ਜਵਾਬ ਮੇਰੇ ਕੋਲ ਪਹੁੰਚ ਗਏ। ਅੱਜ ਸ਼ਾਮ ਇਹਨਾਂ ਬਾਰੇ ਬੈਠ ਕੇ ਗੱਲਾਂ ਕਰਾਂਗੇ।</p>
+    <p class="sign">${sign()}</p>
+    <p class="madeby"><a href="${esc(baseUrl())}">ਤੁਸੀਂ ਵੀ ਆਪਣੇ ਸਾਥੀ ਲਈ ਇਹ ਬਣਾਓ</a></p>
+  </section>`;
+}
+
+function render(animate = true) {
+  const f = flow[step];
+  const html = { intro: introScreen, chapter: () => chapterScreen(CHAPTERS[f.ci]), q: () => questionScreen(questions[f.qi]),
+                 review: reviewScreen, sent: sentScreen }[f.kind]();
+  app.innerHTML = html;
+  if (animate) { app.firstElementChild.classList.add("enter"); window.scrollTo({ top: 0 }); }
+  updateBand();
+}
+function refreshNext() {
+  const f = flow[step];
+  const btn = document.getElementById("nextBtn");
+  if (btn && f.kind === "q") btn.disabled = !canGoOn(questions[f.qi]);
+  updateBand();
+}
+function goNext() {
+  const f = flow[step];
+  if (f.kind === "q") {
+    const q = questions[f.qi];
+    if (q.type === "scale" && typeof answers[q.id] !== "number") answers[q.id] = q.start;
+    if (!canGoOn(q)) return;
+  }
+  if (returnToReview) { returnToReview = false; step = flow.findIndex(x => x.kind === "review"); }
+  else step = Math.min(step + 1, flow.length - 1);
+  render();
+}
+function goBack() { returnToReview = false; step = Math.max(step - 1, 0); render(); }
+
+function startQuiz(c) {
+  cfg = c;
+  document.title = "ਤੇਰੇ ਲਈ ਕੁਝ ਸਵਾਲ";
+  CHAPTERS = buildChapters(c);
+  flow = [{ kind: "intro" }];
+  CHAPTERS.forEach((ch, ci) => {
+    flow.push({ kind: "chapter", ci });
+    ch.questions.forEach(q => {
+      q.id = "q" + (questions.length + 1);
+      q.qi = questions.length;
+      questions.push(q);
+      flow.push({ kind: "q", qi: q.qi });
+    });
+  });
+  flow.push({ kind: "review" }, { kind: "sent" });
+
+  band.hidden = false;
+  band.setAttribute("aria-valuemax", questions.length);
+  band.innerHTML = `<ol>${questions.map((_, i) => `<li>${butaSVG(threadFor(i))}</li>`).join("")}</ol>`;
+  bandButas = band.querySelectorAll(".buta");
+
+  window.addEventListener("beforeunload", e => {
+    if (questions.some(isAnswered) && flow[step].kind !== "sent") { e.preventDefault(); e.returnValue = ""; }
+  });
+  render();
+}
+
+/* ---------- Sending ---------- */
+const subject = () => `${cfg.her} ਦੇ ਜਵਾਬ ❤️`;
+function mailtoHref() {
+  const body = questions.map((q, i) => `${i + 1}. ${q.text}\n${formatAnswer(q)}`).join("\n\n");
+  return `mailto:${cfg.to}?subject=${encodeURIComponent(subject())}&body=${encodeURIComponent(body)}`;
+}
+function showSent() { sendState = "idle"; step = flow.findIndex(x => x.kind === "sent"); render(); }
+
+async function send() {
+  sendState = "sending";
+  render(false);
+  const isHosted = location.protocol === "https:" || location.protocol === "http:";
+  if (!isHosted) console.warn("Opened as a local file. FormSubmit only works when this page is served over https (e.g. GitHub Pages).");
+
+  // URL-encoded body + only an Accept header = a CORS "simple request" (no preflight).
+  const body = new URLSearchParams({ _subject: subject(), _template: "table", _captcha: "false" });
+  questions.forEach((q, i) => body.append(`${i + 1}. ${q.text}`, formatAnswer(q)));
+  const url = `https://formsubmit.co/ajax/${cfg.to}`;
+
+  try {
+    const res = await fetch(url, { method: "POST", headers: { Accept: "application/json" }, body });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && (data.success === true || data.success === "true")) return showSent();
+    console.warn("FormSubmit replied but did not accept it:", res.status, data.message || data);
+    sendState = "error";
+  } catch (err) {
+    console.warn("Send failed (no reply from FormSubmit):", err);
+    if (isHosted) {
+      try {
+        await fetch(url, { method: "POST", mode: "no-cors", body });
+        console.warn("Sent via no-cors fallback; delivery can't be confirmed from the page.");
+        return showSent();
+      } catch (err2) {
+        console.warn("Fallback also failed — likely an ad blocker, a sandboxed preview, or no internet:", err2);
+      }
+    }
+    sendState = "error";
+  }
+  render(false);
+}
+
+/* =====================================================================
+   Events
+   ===================================================================== */
+let mode = "setup";
+
+app.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]");
+  if (!el) return;
+  const act = el.dataset.act;
+
+  if (mode === "setup") {
+    if (act === "sg" || act === "rg") { setup[act] = el.dataset.v; renderSetup(`[data-act="${act}"][data-v="${el.dataset.v}"]`); }
+    if (act === "make") makeLink();
+    if (act === "copy") copyLink();
+    if (act === "edit-setup") { setup.view = "form"; renderSetup("#f-from"); }
+    return;
+  }
+
+  const f = flow[step];
+  const q = f.kind === "q" ? questions[f.qi] : null;
+  if (act === "next") return goNext();
+  if (act === "back") return goBack();
+  if (act === "pick") {
+    const i = +el.dataset.i, prev = answers[q.id];
+    answers[q.id] = { index: i, other: prev && prev.index === i ? prev.other : "" };
+    render(false);
+    const other = document.getElementById("other");
+    (other || document.querySelector(`[data-act="pick"][data-i="${i}"]`)).focus();
+  }
+  if (act === "toggle") {
+    const i = +el.dataset.i, sel = new Set(answers[q.id] || []);
+    sel.has(i) ? sel.delete(i) : sel.add(i);
+    answers[q.id] = [...sel].sort((x, y) => x - y);
+    el.setAttribute("aria-pressed", sel.has(i));
+    refreshNext();
+  }
+  if (act === "pair") {
+    const pi = +el.dataset.p, i = +el.dataset.i;
+    const sel = answers[q.id] || new Array(q.pairs.length).fill(null);
+    sel[pi] = i;
+    answers[q.id] = sel;
+    el.parentElement.querySelectorAll(".opt").forEach(b => b.setAttribute("aria-pressed", +b.dataset.i === i));
+    refreshNext();
+  }
+  if (act === "edit") {
+    returnToReview = true; sendState = "idle";
+    step = flow.findIndex(x => x.kind === "q" && x.qi === +el.dataset.q);
+    render();
+  }
+  if (act === "send") send();
+});
+
+app.addEventListener("input", e => {
+  if (mode === "setup") {
+    const key = e.target.dataset.f;
+    if (key) setup[key] = e.target.value;
+    return;
+  }
+  const f = flow[step];
+  if (f.kind !== "q") return;
+  const q = questions[f.qi];
+  if (e.target.id === "field") answers[q.id] = e.target.value;
+  if (e.target.id === "other") answers[q.id].other = e.target.value;
+  if (e.target.id === "range") {
+    const v = +e.target.value;
+    answers[q.id] = v;
+    document.getElementById("emo").textContent = SCALE_FACES[v - 1];
+    document.getElementById("num").textContent = v;
+  }
+  refreshNext();
+});
+
+app.addEventListener("keydown", e => {
+  if (mode === "setup" && e.key === "Enter" && e.target.tagName === "INPUT") { e.preventDefault(); makeLink(); }
+});
+
+window.addEventListener("hashchange", () => location.reload());
+
+const linkSettings = readLink();
+if (linkSettings) { mode = "quiz"; startQuiz(linkSettings); }
+else { mode = "setup"; startSetup(); }
+</script>
+</body>
+</html>
